@@ -1,4 +1,4 @@
-﻿/*using MySql.Data.MySqlClient;
+﻿using MySql.Data.MySqlClient;
 using System;
 using System.Globalization;
 
@@ -16,13 +16,10 @@ namespace Lab_10
             connect_gen.Open();
             using (StreamReader data_string = new StreamReader("ticker.txt"))
             {
-                File.Delete("avr.txt");
-
-                // Считываем строку (имя акции) и асинхронно вызываем метод получения и записи данных
+                //File.Delete("test.txt");
                 while (!data_string.EndOfStream)
                 {
-                    // Считываем строку (имя акции)
-                    string stockName = data_string.ReadLineAsync().GetAwaiter().GetResult();
+                    string data_name = data_string.ReadLineAsync().GetAwaiter().GetResult();
 
 
                     using var client = new HttpClient();
@@ -30,15 +27,15 @@ namespace Lab_10
                     try
                     {
 
-                        var result = await client.GetStringAsync($"https://query1.finance.yahoo.com/v7/finance/download/{stockName}" +
+                        var result = await client.GetStringAsync($"https://query1.finance.yahoo.com/v7/finance/download/{data_name}" +
                             $"?period1={DateTimeOffset.Now.AddDays(-25).ToUnixTimeSeconds()}&period2={DateTimeOffset.Now.AddDays(-10).ToUnixTimeSeconds()}" +
                             "&interval=1d&events=history&includeAdjustedClose=true");
-                        ActivityAsync(result, stockName, connect_gen);
+                        ActivityAsync(result, data_name, connect_gen);
                     }
 
                     catch (HttpRequestException e)
                     {
-                        System.Console.WriteLine($"{stockName} : {e.Message}");
+                        System.Console.WriteLine($"{data_name} : {e.Message}");
                         continue;
                     }
                 }
@@ -52,15 +49,15 @@ namespace Lab_10
 
             }
 
-            static async void ActivityAsync(string response, string stockName, MySqlConnection connection)
+            static async void ActivityAsync(string response, string data_name, MySqlConnection connection)
             {
-                await Task.Run(() => Activity(response, stockName, connection));
+                await Task.Run(() => Activity(response, data_name, connection));
             }
 
-            static void Activity(string response, string stockName, MySqlConnection connection)
+            static void Activity(string response, string data_name, MySqlConnection connection)
             {
                 mutex.WaitOne();
-                string tickersquery = $"INSERT INTO tickers (ticker) VALUES (\"{stockName}\");";
+                string tickersquery = $"INSERT INTO tickers (ticker) VALUES (\"{data_name}\");";
                 MySqlCommand command = new MySqlCommand(tickersquery, connection);
                 command.ExecuteNonQuery();
                 command.Dispose();
@@ -88,7 +85,7 @@ namespace Lab_10
                         string date = data[0];
                         string avg_price = ((double.Parse(data[2], CultureInfo.InvariantCulture) + double.Parse(data[3], CultureInfo.InvariantCulture)) / 2).ToString().Replace(",",".");
                         
-                        string id_of_ticker_query = $"SELECT id FROM tickers WHERE ticker = \"{stockName}\" ";
+                        string id_of_ticker_query = $"SELECT id FROM tickers WHERE ticker = \"{data_name}\" ";
                         command.CommandText = id_of_ticker_query;
                         
                         mutex.WaitOne();
@@ -119,4 +116,4 @@ namespace Lab_10
             }
         }
     }
-}*/
+}
